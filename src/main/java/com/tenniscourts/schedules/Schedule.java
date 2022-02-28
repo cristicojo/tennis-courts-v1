@@ -3,22 +3,15 @@ package com.tenniscourts.schedules;
 import com.tenniscourts.config.persistence.BaseEntity;
 import com.tenniscourts.reservations.Reservation;
 import com.tenniscourts.tenniscourts.TennisCourt;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.hibernate.Hibernate;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table
@@ -27,10 +20,10 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper = true, exclude = "reservations")
-public class Schedule extends BaseEntity<Long> {
+public class Schedule extends BaseEntity {
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY,cascade=CascadeType.ALL)
+    @JoinColumn(name="tennis_court_id", insertable = false, updatable = false)
     @NotNull
     private TennisCourt tennisCourt;
 
@@ -38,11 +31,15 @@ public class Schedule extends BaseEntity<Long> {
     @NotNull
     private LocalDateTime startDateTime;
 
+    @Column(name="tennis_court_id")
+    @NotNull
+    private Long tennisCourtId;
+
     @Column
     @NotNull
     private LocalDateTime endDateTime;
 
-    @OneToMany
+    @OneToMany(mappedBy = "schedule")
     private List<Reservation> reservations;
 
     public void addReservation(Reservation reservation) {
@@ -52,5 +49,18 @@ public class Schedule extends BaseEntity<Long> {
 
         reservation.setSchedule(this);
         this.reservations.add(reservation);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        Schedule schedule = (Schedule) o;
+        return getId() != null && Objects.equals(getId(), schedule.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }
